@@ -1,10 +1,243 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 
 ```{r}
 library(data.table)
 library(atlastools)
+
+library(ggplot2)
+library(ggspatial)
 ```
 
 ```{r}
+# get data
+data = fread("data/whole_season_tx_0435.csv")
 
+# convert time to seconds from ms
+data[, time := round(TIME / 1000)]
+
+data[, time := as.POSIXct(time, tz = "Amsterdam", origin = "1970-01-01")]
+```
+
+```{r}
+# filter out before specific time
+data_filter = atl_filter_covariates(
+  data = data,
+  filters = "time > '2018-08-19 18:31:00 Amsterdam'"
+)
+
+# select one day after start time
+data_filter = atl_filter_covariates(
+  data = data_filter,
+  filters = c("time < (time[1] + (18 * 3600))")
+)
+```
+
+```{r}
+# add speed
+data_filter[, c("speed_in", "speed_out",
+                "angle") := list(
+  atl_get_speed(data_filter, x = "X", y = "Y", time = "time",
+                type = "in"),
+  atl_get_speed(data_filter, x = "X", y = "Y", time = "time",
+                type = "out"),
+  atl_turning_angle(data_filter, x = "X", y = "Y", time = "time")
+)]
+```
+
+## plot raw
+
+```{r}
+# explore raw
+ggplot(data_filter)+
+  geom_path(aes(X, Y),
+            col = "grey",
+            lwd = 0.1)+
+  geom_point(aes(X, Y),
+             shape = 1,
+             alpha = 0.3,
+             col = "grey20")+
+  scale_colour_brewer(
+    palette = "Set1", direction = -1
+  )+
+  scale_size_area()+
+  htme::theme_custom()
+```
+
+## remove sd and speed
+
+```{r}
+data_filter_sd_speed = atl_filter_covariates(
+  data = data_filter,
+  filters = c(
+    "SD < 100",
+    "((speed_in < 20 & speed_out < 20))")
+)
+```
+
+## plot data with outliers
+
+```{r}
+xlim = c(650600, 650900)
+ylim = c(5901800, 5902100)
+
+# limits
+plot_data_filter =
+ggplot()+
+  geom_point(data = data_filter[!data_filter_sd_speed, on = "TIME"],
+             aes(X, Y),
+             shape = 4,
+             stroke = 1,
+             col = "orange")+
+  # geom_point(data = data_filter_sd_speed,
+  #            aes(X, Y),
+  #            alpha = 0.1,
+  #           col = "seagreen")+
+  geom_path(data = data_filter_sd_speed,
+             aes(X, Y),
+            size = 0.5,
+            col = "seagreen")+
+  annotate(geom = "rect",
+           xmin = xlim[1], xmax = xlim[2],
+           ymin = ylim[1], ymax = ylim[2],
+           fill = NA,
+           lty = 1,
+           colour = "grey50")+
+  scale_size_area()+
+  coord_fixed(
+    xlim = c(NA, max(data_filter$X) + (diff(xlim)*4))
+  )+
+  theme_void()+
+  theme(
+    # plot.title.position = "panel",
+    plot.title = element_text(
+      face = "bold",
+      margin = margin(t = 10, b = -30, r = -20, l = 30),
+      hjust = 0.05
+    )
+  )+
+  annotation_scale(
+    bar_cols = c("grey50"),
+    height = unit(1, units = "mm"),
+    style = "ticks",
+    line_width = 1.5,
+    line_col = "grey50",
+    text_col = "grey50",
+    width_hint = 0.1
+  )+
+  labs(title = "(a)")
+```
+
+## do median smooth
+
+```{r}
+data_smooth = copy(data_filter_sd_speed)
+
+atl_median_smooth(data = data_smooth,
+                  x = "X", y = "Y", time = "TIME", moving_window = 11)
+```
+
+## plot showing median smooth
+
+```{r}
+# set limits
+xlim = c(650600, 650900)
+ylim = c(5901800, 5902100)
+# explore raw
+plot_data_smooth =
+  ggplot()+
+    geom_point(data = data_filter[!data_filter_sd_speed, on = "TIME"],
+             aes(X, Y, 
+                 col = "outliers",
+                 shape = "outliers"),
+             stroke = 1,
+             show.legend = T)+
+  geom_point(data = data_filter_sd_speed,
+             aes(X, Y,
+                 col = "filtered",
+                 shape = "filtered"),
+             alpha = 0.5)+
+  geom_path(data = data_smooth,
+             aes(X, Y, 
+                 col = "smooth",
+                 shape = "smooth"))+
+  scale_size_area()+
+    scale_colour_manual(
+      name = NULL, 
+      values = c('outliers' = 'orange',
+                 "filtered" = "seagreen",
+                 "smooth" = "navyblue"), 
+      labels = c("filtered data", "outliers removed", "median smooth")
+      )+
+    scale_shape_manual(
+      name = NULL,
+      values = c("outliers" = 4,
+                 "filtered" = 1,
+                 "smooth" = NA),
+      labels = c("filtered data", "outliers removed", "median smooth")
+    )+
+    coord_fixed(xlim = xlim, ylim = ylim)+
+    theme_void()+
+    guides(color = guide_legend(override.aes = 
+                                  list(linetype = c(0,0,1))))+
+    theme(
+      panel.background = element_rect(
+        colour = "grey50",
+        fill = "white",
+        size = 1,
+        linetype = 1
+      ),
+      legend.position = c(0.75, 0.83),
+          legend.text = element_text(colour = "grey20"),
+          legend.background = element_rect(fill = "white",
+                                           color = NA),
+      legend.margin = margin(t=0, r =0, b= 0, l = 0)
+      )+
+    annotation_scale(
+      bar_cols = c("grey50"),
+      height = unit(1, units = "mm"),
+      style = "ticks",
+      line_width = 1.5,
+      line_col = "grey50",
+      text_col = "grey50",
+      width_hint = 0.175
+    )
+```
+
+
+## make composite figure
+
+```{r}
+# add together
+figure_plot =
+plot_data_filter +
+  annotation_custom(
+    ggplotGrob(plot_data_smooth),
+    xmin = max(data_filter_sd_speed$X) + 200,
+    xmax = max(data_filter_sd_speed$X) + diff(xlim)*6,
+    ymin = min(data_filter$Y),
+    ymax = max(data_filter$Y)
+  )+
+  annotate(
+    colour = "grey50",
+    geom = "segment",
+    x = xlim[2],
+    xend = max(data_filter_sd_speed$X) + 200,
+    y = mean(ylim),
+    yend = mean(ylim),
+    arrow = arrow(length = unit(0.03, "npc"),
+                  type = "closed")
+  )
+```
+
+```{r}
+ggsave(
+  figure_plot,
+  filename = "figures/figure_row_3_a_preprocessing.png",
+  height = 3, width = 6
+)
 ```
 
