@@ -48,25 +48,6 @@ data_filter[, c("speed_in", "speed_out",
 )]
 ```
 
-## plot raw
-
-```{r}
-# explore raw
-ggplot(data_filter)+
-  geom_path(aes(X, Y),
-            col = "grey",
-            lwd = 0.1)+
-  geom_point(aes(X, Y),
-             shape = 1,
-             alpha = 0.3,
-             col = "grey20")+
-  scale_colour_brewer(
-    palette = "Set1", direction = -1
-  )+
-  scale_size_area()+
-  htme::theme_custom()
-```
-
 ## remove sd and speed
 
 ```{r}
@@ -88,25 +69,34 @@ ylim = c(5901800, 5902100)
 plot_data_filter =
 ggplot()+
   geom_point(data = data_filter[!data_filter_sd_speed, on = "TIME"],
-             aes(X, Y),
+             aes(X, Y, col = "outliers"),
              shape = 4,
-             stroke = 1,
-             col = "orange")+
-  # geom_point(data = data_filter_sd_speed,
-  #            aes(X, Y),
-  #            alpha = 0.1,
-  #           col = "seagreen")+
+             stroke = 0.5)+
   geom_path(data = data_filter_sd_speed,
-             aes(X, Y),
-            size = 0.5,
-            col = "seagreen")+
+             aes(X, Y, col = "filtered"),
+            size = 0.2)+
   annotate(geom = "rect",
            xmin = xlim[1], xmax = xlim[2],
            ymin = ylim[1], ymax = ylim[2],
            fill = NA,
            lty = 1,
            colour = "grey50")+
-  scale_size_area()+
+  scale_colour_manual(
+      name = NULL, 
+      values = c('outliers' = 'indianred1',
+                 "filtered" = "seagreen"), 
+      labels = c("filtered data", 
+                 "outliers removed")
+      )+
+    scale_shape_manual(
+      name = NULL,
+      values = c("outliers" = 4,
+                 "filtered" = NA),
+      labels = c("filtered data", "outliers")
+    )+
+  guides(color = guide_legend(override.aes = 
+                                list(linetype = c(1,0),
+                                     shape = c(NA, 4))))+
   coord_fixed(
     xlim = c(NA, max(data_filter$X) + (diff(xlim)*4))
   )+
@@ -117,7 +107,8 @@ ggplot()+
       face = "bold",
       margin = margin(t = 10, b = -30, r = -20, l = 30),
       hjust = 0.05
-    )
+    ),
+    legend.position = c(0.1, 0.2)
   )+
   annotation_scale(
     bar_cols = c("grey50"),
@@ -153,7 +144,7 @@ plot_data_smooth =
              aes(X, Y, 
                  col = "outliers",
                  shape = "outliers"),
-             stroke = 1,
+             stroke = 0.5,
              show.legend = T)+
   geom_point(data = data_filter_sd_speed,
              aes(X, Y,
@@ -167,17 +158,17 @@ plot_data_smooth =
   scale_size_area()+
     scale_colour_manual(
       name = NULL, 
-      values = c('outliers' = 'orange',
+      values = c('outliers' = 'indianred1',
                  "filtered" = "seagreen",
-                 "smooth" = "navyblue"), 
-      labels = c("filtered data", "outliers removed", "median smooth")
+                 "smooth" = "midnightblue"), 
+      labels = c("filtered data", "outliers", "median smooth\n(K = 11)")
       )+
     scale_shape_manual(
       name = NULL,
       values = c("outliers" = 4,
                  "filtered" = 1,
                  "smooth" = NA),
-      labels = c("filtered data", "outliers removed", "median smooth")
+      labels = c("filtered data", "outliers", "median smooth\n(K = 11)")
     )+
     coord_fixed(xlim = xlim, ylim = ylim)+
     theme_void()+
@@ -190,7 +181,7 @@ plot_data_smooth =
         size = 1,
         linetype = 1
       ),
-      legend.position = c(0.75, 0.83),
+      legend.position = c(0.75, 0.85),
           legend.text = element_text(colour = "grey20"),
           legend.background = element_rect(fill = "white",
                                            color = NA),
@@ -212,7 +203,7 @@ plot_data_smooth =
 
 ```{r}
 # add together
-figure_plot =
+# figure_plot =
 plot_data_filter +
   annotation_custom(
     ggplotGrob(plot_data_smooth),
