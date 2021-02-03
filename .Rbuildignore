@@ -1,4 +1,6 @@
 ^htme\.Rproj$
 ^\.Rproj\.user$
 ^\.github$
-^*\.Rmd$
+^.* \.Rmd
+^data/.+$
+^LICENSE\.md$
