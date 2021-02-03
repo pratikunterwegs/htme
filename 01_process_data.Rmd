@@ -70,6 +70,12 @@ ylim = c(5901800, 5902100)
 # limits
 plot_data_filter =
 ggplot()+
+  geom_path(
+    data = data_filter,
+             aes(X, Y),
+             size = 0.1,
+    col = "grey"
+  )+
   geom_point(data = data_filter[!data_filter_sd_speed, on = "TIME"],
              aes(X, Y, col = "outliers"),
              shape = 4,
@@ -97,8 +103,9 @@ ggplot()+
       labels = c("filtered data", "outliers")
     )+
   guides(color = guide_legend(override.aes = 
-                                list(linetype = c(1,0),
-                                     shape = c(NA, 4))))+
+                                list(linetype = c(1, 1),
+                                     shape = c(NA, 4),
+                                     )))+
   coord_fixed(
     xlim = c(NA, max(data_filter$X) + (diff(xlim)*4))
   )+
@@ -183,7 +190,7 @@ plot_data_smooth =
         size = 1,
         linetype = 1
       ),
-      legend.position = c(0.75, 0.85),
+      legend.position = c(0.75, 0.83),
           legend.text = element_text(colour = "grey20"),
           legend.background = element_rect(fill = "white",
                                            color = NA),
@@ -205,7 +212,7 @@ plot_data_smooth =
 
 ```{r}
 # add together
-# figure_plot =
+figure_plot =
 plot_data_filter +
   annotation_custom(
     ggplotGrob(plot_data_smooth),
@@ -244,12 +251,13 @@ im = image_read("figures/figure_row_3_a_preprocessing.png")
 knot = image_read("figures/knots/knot_poster_picture.png")
 
 # combine knot and figure
-im = im %>% 
+im = 
+  im %>% 
   image_composite(
     image_scale(knot, "45%x"),
     operator = "Atop",
     gravity = "SouthWest",
-    offset = "-10-100"
+    offset = "-10-250"
   )
 
 # write
