@@ -5,9 +5,11 @@ editor_options:
 ---
 
 ```{r}
+# data processing
 library(data.table)
 library(atlastools)
 
+# plotting
 library(ggplot2)
 library(ggspatial)
 ```
@@ -229,6 +231,31 @@ ggsave(
   figure_plot,
   filename = "figures/figure_row_3_a_preprocessing.png",
   height = 3, width = 6
+)
+```
+
+## add red knot
+
+```{r}
+# get figure
+im = image_read("figures/figure_row_3_a_preprocessing.png")
+
+# get red knot
+knot = image_read("figures/knots/knot_poster_picture.png")
+
+# combine knot and figure
+im = im %>% 
+  image_composite(
+    image_scale(knot, "45%x"),
+    operator = "Atop",
+    gravity = "SouthWest",
+    offset = "-10-100"
+  )
+
+# write
+image_write(
+  im,
+  path = "figures/figure_row_3_a_preprocessing.png"
 )
 ```
 
