@@ -12,6 +12,7 @@ library(atlastools)
 # plotting
 library(ggplot2)
 library(ggspatial)
+library(magick)
 ```
 
 ```{r}
@@ -71,86 +72,86 @@ data_filter_sd_speed <- atl_filter_covariates(
 ## plot data with outliers
 
 ```{r}
-xlim <- c(650600, 650900)
-ylim <- c(5901800, 5902100)
-
-# limits
-plot_data_filter <-
-  ggplot() +
-  geom_path(
-    data = data_filter,
-    aes(X, Y),
-    size = 0.1,
-    col = "grey"
-  ) +
-  geom_point(
-    data = data_filter[!data_filter_sd_speed, on = "TIME"],
-    aes(X, Y, col = "outliers"),
-    shape = 4,
-    stroke = 0.5
-  ) +
-  geom_path(
-    data = data_filter_sd_speed,
-    aes(X, Y, col = "filtered"),
-    size = 0.2
-  ) +
-  annotate(
-    geom = "rect",
-    xmin = xlim[1], xmax = xlim[2],
-    ymin = ylim[1], ymax = ylim[2],
-    fill = NA,
-    lty = 1,
-    colour = "grey50"
-  ) +
-  scale_colour_manual(
-    name = NULL,
-    values = c(
-      "outliers" = "indianred1",
-      "filtered" = "seagreen"
-    ),
-    labels = c(
-      "filtered data",
-      "outliers removed"
-    )
-  ) +
-  scale_shape_manual(
-    name = NULL,
-    values = c(
-      "outliers" = 4,
-      "filtered" = NA
-    ),
-    labels = c("filtered data", "outliers")
-  ) +
-  guides(color = guide_legend(
-    override.aes =
-      list(
-        linetype = c(1, 1),
-        shape = c(NA, 4),
-      )
-  )) +
-  coord_fixed(
-    xlim = c(NA, max(data_filter$X) + (diff(xlim) * 4))
-  ) +
-  theme_void() +
-  theme(
-    # plot.title.position = "panel",
-    plot.title = element_text(
-      face = "bold",
-      margin = margin(t = 10, b = -30, r = -20, l = 30),
-      hjust = 0.05
-    ),
-    legend.position = c(0.1, 0.2)
-  ) +
-  annotation_scale(
-    bar_cols = c("grey50"),
-    height = unit(1, units = "mm"),
-    style = "ticks",
-    line_width = 1.5,
-    line_col = "grey50",
-    text_col = "grey50",
-    width_hint = 0.1
-  ) +
-  labs(title = "(a)")
+# xlim <- c(650600, 650900)
+# ylim <- c(5901800, 5902100)
+# 
+# # limits
+# plot_data_filter <-
+#   ggplot() +
+#   geom_path(
+#     data = data_filter,
+#     aes(X, Y),
+#     size = 0.1,
+#     col = "grey"
+#   ) +
+#   geom_point(
+#     data = data_filter[!data_filter_sd_speed, on = "TIME"],
+#     aes(X, Y, col = "outliers"),
+#     shape = 4,
+#     stroke = 0.5
+#   ) +
+#   geom_path(
+#     data = data_filter_sd_speed,
+#     aes(X, Y, col = "filtered"),
+#     size = 0.2
+#   ) +
+#   annotate(
+#     geom = "rect",
+#     xmin = xlim[1], xmax = xlim[2],
+#     ymin = ylim[1], ymax = ylim[2],
+#     fill = NA,
+#     lty = 1,
+#     colour = "grey50"
+#   ) +
+#   scale_colour_manual(
+#     name = NULL,
+#     values = c(
+#       "outliers" = "indianred1",
+#       "filtered" = "seagreen"
+#     ),
+#     labels = c(
+#       "filtered data",
+#       "outliers removed"
+#     )
+#   ) +
+#   scale_shape_manual(
+#     name = NULL,
+#     values = c(
+#       "outliers" = 4,
+#       "filtered" = NA
+#     ),
+#     labels = c("filtered data", "outliers")
+#   ) +
+#   guides(color = guide_legend(
+#     override.aes =
+#       list(
+#         linetype = c(1, 1),
+#         shape = c(NA, 4),
+#       )
+#   )) +
+#   coord_fixed(
+#     xlim = c(NA, max(data_filter$X) + (diff(xlim) * 4))
+#   ) +
+#   theme_void() +
+#   theme(
+#     # plot.title.position = "panel",
+#     plot.title = element_text(
+#       face = "bold",
+#       margin = margin(t = 10, b = -30, r = -20, l = 30),
+#       hjust = 0.05
+#     ),
+#     legend.position = c(0.1, 0.2)
+#   ) +
+#   annotation_scale(
+#     bar_cols = c("grey50"),
+#     height = unit(1, units = "mm"),
+#     style = "ticks",
+#     line_width = 1.5,
+#     line_col = "grey50",
+#     text_col = "grey50",
+#     width_hint = 0.1
+#   ) +
+#   labs(title = "(a)")
 ```
 
 ## do median smooth
@@ -168,11 +169,24 @@ atl_median_smooth(
 
 ```{r}
 # set limits
-xlim <- c(650600, 650900)
-ylim <- c(5901800, 5902100)
+xlim <- c(650200, 651000)
+ylim <- c(5901800, 5902200)
+
+legend_label = c("raw" = "Raw data",
+                 "outliers" = "Unrealistic\nmovement",
+                 "filtered" = "Filtered data",
+                 "smooth" = "Median smooth\n(K = 11)")
+
 # explore raw
-plot_data_smooth <-
+figure_3a_prelim <-
   ggplot() +
+  geom_path(
+    data = data_filter,
+    aes(X, Y,
+        col = "raw",
+        shape = "raw"),
+    size = 0.1
+  ) +
   geom_point(
     data = data_filter[!data_filter_sd_speed, on = "TIME"],
     aes(X, Y,
@@ -195,42 +209,46 @@ plot_data_smooth <-
     aes(X, Y,
       col = "smooth",
       shape = "smooth"
-    )
+    ),
+    size = 0.5
   ) +
   scale_size_area() +
   scale_colour_manual(
     name = NULL,
     values = c(
-      "outliers" = "indianred1",
-      "filtered" = "seagreen",
+      "raw" = "grey", 
+      "outliers" = "darkorange", 
+      "filtered" = "seagreen", 
       "smooth" = "midnightblue"
     ),
-    labels = c("filtered data", "outliers", "median smooth\n(K = 11)")
+    labels = legend_label,
+    breaks = names(legend_label)
   ) +
   scale_shape_manual(
     name = NULL,
     values = c(
+      "raw" = NA,
       "outliers" = 4,
       "filtered" = 1,
       "smooth" = NA
     ),
-    labels = c("filtered data", "outliers", "median smooth\n(K = 11)")
+    labels = legend_label,
+    breaks = names(legend_label)
   ) +
   coord_fixed(xlim = xlim, ylim = ylim) +
   theme_void() +
   guides(color = guide_legend(
     override.aes =
-      list(linetype = c(0, 0, 1))
-  )) +
+      list(linetype = c(1, 0, 0, 1))
+  ))+
   theme(
-    panel.background = element_rect(
-      colour = "grey50",
-      fill = "white",
-      size = 1,
-      linetype = 1
+    plot.title = element_text(
+      face = "bold",
+      margin = margin(t = 10, b = -30, r = -20, l = 30),
+      hjust = 0.05
     ),
-    legend.position = c(0.75, 0.83),
-    legend.text = element_text(colour = "grey20"),
+    legend.position = c(0.9, 0.85),
+    legend.text = element_text(colour = "grey50"),
     legend.background = element_rect(
       fill = "white",
       color = NA
@@ -249,37 +267,10 @@ plot_data_smooth <-
 ```
 
 
-## make composite figure
-
-```{r}
-# add together
-figure_plot <-
-  plot_data_filter +
-  annotation_custom(
-    ggplotGrob(plot_data_smooth),
-    xmin = max(data_filter_sd_speed$X) + 200,
-    xmax = max(data_filter_sd_speed$X) + diff(xlim) * 6,
-    ymin = min(data_filter$Y),
-    ymax = max(data_filter$Y)
-  ) +
-  annotate(
-    colour = "grey50",
-    geom = "segment",
-    x = xlim[2],
-    xend = max(data_filter_sd_speed$X) + 200,
-    y = mean(ylim),
-    yend = mean(ylim),
-    arrow = arrow(
-      length = unit(0.03, "npc"),
-      type = "closed"
-    )
-  )
-```
-
 ```{r}
 ggsave(
-  figure_plot,
-  filename = "figures/figure_row_3_a_preprocessing.png",
+  figure_3a_prelim,
+  filename = "figures/figure_row_3_a_preprocessing_prelim.png",
   height = 3, width = 6
 )
 ```
@@ -288,7 +279,7 @@ ggsave(
 
 ```{r}
 # get figure
-im <- image_read("figures/figure_row_3_a_preprocessing.png")
+im <- image_read("figures/figure_row_3_a_preprocessing_prelim.png")
 
 # get red knot
 knot <- image_read("figures/knots/knot_poster_picture.png")
@@ -297,10 +288,10 @@ knot <- image_read("figures/knots/knot_poster_picture.png")
 im <-
   im %>%
   image_composite(
-    image_scale(knot, "45%x"),
+    image_scale(knot, "60%x"),
     operator = "Atop",
     gravity = "SouthWest",
-    offset = "-10-250"
+    offset = "-10-50"
   )
 
 # write
