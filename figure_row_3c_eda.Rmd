@@ -1,0 +1,185 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+# data processing
+library(data.table)
+library(atlastools)
+library(sf)
+
+# plotting
+library(ggplot2)
+library(ggspatial)
+library(magick)
+library(patchwork)
+library(colorspace)
+```
+
+```{r}
+# get data
+data <- list.files(path = "data", pattern = "tx",
+                   full.names = T)
+
+# process data
+data = lapply(data, function(file){
+  df = fread(file)
+  df[, time := round(TIME/1000)]
+  df[, time := as.POSIXct(time, tz = "Amsterdam", 
+                          origin = "1970-01-01")]
+  df[, day := as.numeric(
+    round(
+      julian(time, origin = "2018-08-12")
+    )
+  )]
+  df[, TAG := as.character(TAG)]
+  
+  df = df[, .N, by = c("day", "TAG")]
+})
+
+# bind list
+data_summary = rbindlist(data)
+
+# get tag numeric 3 digit
+data_summary[, id := substr(TAG, 
+                            nchar(TAG) - 2, nchar(TAG))]
+```
+
+## plot time heatmap
+
+```{r}
+figure_time_heatmap = 
+  ggplot()+
+  geom_tile(data = data_summary,
+            aes(day, id, fill = N))+
+  theme_test()+
+  scale_fill_continuous_sequential(
+    palette = "Sunset",
+    breaks = c(5000, 25000),
+    labels = c("5K", "25K")
+  )+
+  coord_cartesian(
+    xlim = c(NA, 60),
+    expand = T
+  )+
+  theme(
+    legend.position = c(0.9, 0.65),
+    legend.background = element_rect(
+      fill = alpha("grey", alpha = 0.4),
+      colour = "grey20",
+      size = 0.1
+    ),
+    legend.key.width = unit(2, units = "mm"),
+    legend.key.height = unit(4, units = "mm"),
+    # axis.title.y = element_blank(),
+    plot.subtitle = element_text(
+      hjust = 0,
+      margin = margin(r = 40, l = -40)
+    ),
+    axis.text.y = element_blank()
+  )+
+  labs( x = "Tracking day",
+        y = "Individual",
+        # subtitle = "Individual",
+        fill = "Fixes")
+```
+
+
+## Count over 500m bins
+
+```{r}
+# get data
+data <- list.files(path = "data", pattern = "tx",
+                   full.names = T)
+
+# process data
+data = lapply(data, function(file){
+  df = fread(file)
+  df[, c("xround", "yround") := list(
+    plyr::round_any(X, 200),
+    plyr::round_any(Y, 200)
+  )]
+  
+  df[, TAG := as.character(TAG)]
+  
+  df[, id := substr(TAG, 
+                    nchar(TAG) - 2, nchar(TAG))]
+  
+  df = df[, .N, 
+          by = c("xround", "yround", "id")]
+  
+  df = df[N > 10, ]
+  
+  }
+)
+
+# bind list
+data_summary_spatial = rbindlist(data)
+```
+
+
+```{r}
+fig_heatmap_spatial = 
+ggplot(data_summary_spatial[id %in% c("435", "437")])+
+  geom_tile(aes(xround, yround,
+                fill = N))+
+  scale_fill_continuous_sequential(
+    palette = "Terrain",
+    breaks = c(100, 1000, 10000),
+    labels = c("100", "1K", "10K"),
+    trans = "log10"
+  )+
+  
+  theme_test()+
+  theme(
+    legend.position = c(0.9, 0.65),
+    legend.key.width = unit(2, units = "mm"),
+    legend.key.height = unit(4, units = "mm"),
+    axis.title = element_blank(),
+    axis.text.y = element_text(
+      angle= 90,
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      hjust = 0,
+      margin = margin(r = 40, l = -40)
+    )
+  )+
+  coord_sf(crs = 32631,
+           xlim = c(640000, NA),
+           ylim = c(5898000, NA),
+           expand = F
+  )+
+  scale_y_continuous(breaks = c(53.23, 53.28))+
+  annotation_scale(
+    bar_cols = c("grey50"),
+    height = unit(1, units = "mm"),
+    style = "ticks",
+    line_width = 1.5,
+    line_col = "grey50",
+    text_col = "grey50",
+    width_hint = 0.175, 
+    location = "br"
+  )+
+  labs(
+    fill = "Fixes"
+  )
+```
+
+```{r}
+# save plots
+ggsave(
+  fig_heatmap_spatial,
+  filename = "figures/fig_row_3_eda.png",
+  height = 2.75, width = 5
+)
+
+ggsave(
+  figure_time_heatmap,
+  filename = "figures/fig_row_3_eda_time.png",
+  height = 2.75, width = 5
+)
+```
+
