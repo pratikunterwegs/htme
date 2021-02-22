@@ -141,19 +141,25 @@ fig_scales =
           col = NA)+
   geom_path(data = data_smooth[time < time[1] + (3600 * 360) ],
             aes(x, y),
-            size = 0.1,
+            size = 0.05,
             # shape = ".",
             col = "steelblue")+
-  geom_path(data = data_patch,
+  geom_point(data = data_smooth[time < time[1] + (3600 * 360) ],
+            aes(x, y),
+            size = 0.05,
+            shape = ".",
+            col = "steelblue")+
+  geom_path(data = data_patch[1:10, ],
              aes(x_median, y_median),
              show.legend = F,
-            size = 0.2,
-             colour = "grey30")+
-  geom_point(data = data_patch,
+            # size = 0.2,
+             colour = "indianred")+
+  geom_point(data = data_patch[1:10, ],
              aes(x_median, y_median,
-                 size = duration,
-                 fill = duration),
+                 size = duration),
+             fill = "indianred",
              show.legend = F,
+             colour = "grey20",
              shape = 21)+
   theme_test(base_family = "Arial")+
   theme(
@@ -168,12 +174,13 @@ fig_scales =
     )
   )+
   scale_size_area(
-    max_size = 10
+    max_size = 8
   )+
   scale_fill_continuous_sequential(
-    palette = "Sunset"
+    palette = "Plasma"
   )+
   scale_y_continuous(breaks = c(53.24, 53.25))+
+  scale_x_continuous(breaks = c(5.24, 5.26))+
   coord_sf(xlim = c(bbox["xmin"] - 200, bbox["xmax"] - 2500),
            ylim = c(bbox["ymin"] - 200, bbox["ymax"] + 00))+
   annotation_scale(
@@ -192,8 +199,8 @@ fig_scales =
 ggsave(
   fig_scales,
   filename = "figures/figure_row_4_f_scales_prelim.png",
-  width = 5,
-  height = 4
+  width = 3,
+  height = 2.5
 )
 ```
 
@@ -213,7 +220,7 @@ im <-
     image_scale(knot, "50%x"),
     operator = "Atop",
     gravity = "SouthWest",
-    offset = "-100-100"
+    offset = "-50-50"
   )
 
 # write

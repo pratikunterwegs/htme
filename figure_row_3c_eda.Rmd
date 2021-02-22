@@ -121,7 +121,7 @@ data_summary_spatial = rbindlist(data)
 
 
 ```{r}
-fig_heatmap_spatial = 
+fig_heatmap_spatial =
 ggplot(data_summary_spatial[id %in% c("435", "437")])+
   geom_tile(aes(xround, yround,
                 fill = N))+
@@ -134,7 +134,7 @@ ggplot(data_summary_spatial[id %in% c("435", "437")])+
   
   theme_test()+
   theme(
-    legend.position = c(0.9, 0.65),
+    legend.position = c(0.1, 0.3),
     legend.key.width = unit(2, units = "mm"),
     legend.key.height = unit(4, units = "mm"),
     axis.title = element_blank(),
@@ -148,8 +148,8 @@ ggplot(data_summary_spatial[id %in% c("435", "437")])+
     )
   )+
   coord_sf(crs = 32631,
-           xlim = c(640000, NA),
-           ylim = c(5898000, NA),
+           xlim = c(640000, 656000),
+           ylim = c(5895000, NA),
            expand = F
   )+
   scale_y_continuous(breaks = c(53.23, 53.28))+
@@ -173,13 +173,7 @@ ggplot(data_summary_spatial[id %in% c("435", "437")])+
 ggsave(
   fig_heatmap_spatial,
   filename = "figures/fig_row_3_eda.png",
-  height = 2.75, width = 5
-)
-
-ggsave(
-  figure_time_heatmap,
-  filename = "figures/fig_row_3_eda_time.png",
-  height = 2.75, width = 5
+  height = 2.5, width = 3
 )
 ```
 
