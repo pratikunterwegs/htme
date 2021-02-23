@@ -22,134 +22,88 @@ library(colorspace)
 # get data
 data <- fread("data/bat_data.csv")
 
+# filter on SD
+data[, SD := sqrt(VARX + VARY + (2 * COVXY))]
+data = data[SD < 20, ]
 
+# get summary
+data[, c("xround", "yround") := list(round(X, -2), round(Y, -2))]
 
-# bind list
-data_summary = rbindlist(data)
-
-# get tag numeric 3 digit
-data_summary[, id := substr(TAG, 
-                            nchar(TAG) - 2, nchar(TAG))]
+data_summary = data[, .N, by = c("xround", "yround")]
 ```
 
-## plot time heatmap
+## Read trees and roosts
 
 ```{r}
-figure_time_heatmap = 
-  ggplot()+
-  geom_tile(data = data_summary,
-            aes(day, id, fill = N))+
-  theme_test()+
-  scale_fill_continuous_sequential(
-    palette = "Sunset",
-    breaks = c(5000, 25000),
-    labels = c("5K", "25K")
-  )+
-  coord_cartesian(
-    xlim = c(NA, 60),
-    expand = T
-  )+
-  theme(
-    legend.position = c(0.9, 0.65),
-    legend.background = element_rect(
-      fill = alpha("grey", alpha = 0.4),
-      colour = "grey20",
-      size = 0.1
-    ),
-    legend.key.width = unit(2, units = "mm"),
-    legend.key.height = unit(4, units = "mm"),
-    # axis.title.y = element_blank(),
-    plot.subtitle = element_text(
-      hjust = 0,
-      margin = margin(r = 40, l = -40)
-    ),
-    axis.text.y = element_blank()
-  )+
-  labs( x = "Tracking day",
-        y = "Individual",
-        # subtitle = "Individual",
-        fill = "Fixes")
-```
-
-
-## Count over 500m bins
-
-```{r}
-# get data
-data <- list.files(path = "data", pattern = "tx",
-                   full.names = T)
-
-# process data
-data = lapply(data, function(file){
-  df = fread(file)
-  df[, c("xround", "yround") := list(
-    plyr::round_any(X, 200),
-    plyr::round_any(Y, 200)
-  )]
-  
-  df[, TAG := as.character(TAG)]
-  
-  df[, id := substr(TAG, 
-                    nchar(TAG) - 2, nchar(TAG))]
-  
-  df = df[, .N, 
-          by = c("xround", "yround", "id")]
-  
-  df = df[N > 10, ]
-  
-  }
-)
-
-# bind list
-data_summary_spatial = rbindlist(data)
+trees = fread("data/trees_update_clusters_Aug2020.csv")
+roosts = fread("data/Roosts.csv")
 ```
 
 
 ```{r}
-fig_heatmap_spatial =
-ggplot(data_summary_spatial[id %in% c("435", "437")])+
+# fig_heatmap_spatial =
+ggplot(data_summary)+
+  
+  geom_point(
+    data = trees,
+    aes(X, Y),
+    size = 0.05,
+    shape = ".",
+    col = "seagreen")+
   geom_tile(aes(xround, yround,
-                fill = N))+
-  scale_fill_continuous_sequential(
-    palette = "Terrain",
-    breaks = c(100, 1000, 10000),
-    labels = c("100", "1K", "10K"),
-    trans = "log10"
+                fill = N),
+            alpha = 0.8)+
+  geom_point(
+    data = roosts,
+    aes(X, Y,
+        shape = "Roost"),
+    size = 2,
+    stroke = 0.6
   )+
-  
-  theme_test()+
-  theme(
-    legend.position = c(0.1, 0.3),
-    legend.key.width = unit(2, units = "mm"),
-    legend.key.height = unit(4, units = "mm"),
-    axis.title = element_blank(),
-    axis.text.y = element_text(
-      angle= 90,
-      hjust = 0.5
-    ),
-    plot.subtitle = element_text(
-      hjust = 0,
-      margin = margin(r = 40, l = -40)
+  scale_shape_manual(
+    values = c(
+      "Roost" = 5
     )
   )+
-  coord_sf(crs = 32631,
-           xlim = c(640000, 656000),
-           ylim = c(5895000, NA),
+  scale_fill_viridis_c(
+    option = "C",
+    breaks = c(10, 100, 1000),
+    # labels = c("100", "1K", "10K"),
+    trans = "log10",
+    direction = -1
+  )+
+  
+  theme_test(base_size = 8)+
+  theme(
+    legend.position = c(0.9, 0.8),
+    legend.key.width = unit(2, units = "mm"),
+    legend.key.height = unit(3, units = "mm"),
+    axis.title = element_blank(),
+    axis.text.y = element_text(
+      angle = 90,
+      hjust = 0.5
+    )
+  )+
+  coord_sf(crs = 2039,
+           xlim = range(data$X),
+           ylim = range(data$Y),
            expand = F
   )+
-  scale_y_continuous(breaks = c(53.23, 53.28))+
+  scale_y_continuous(breaks = c(33.05, 33.10))+
+  scale_x_continuous(breaks = c(35.6))+
   annotation_scale(
-    bar_cols = c("grey50"),
+    bar_cols = c("grey20"),
     height = unit(1, units = "mm"),
     style = "ticks",
-    line_width = 1.5,
-    line_col = "grey50",
-    text_col = "grey50",
+    line_width = 1,
+    line_col = "grey20",
+    text_col = "grey20",
     width_hint = 0.175, 
     location = "br"
   )+
   labs(
-    fill = "Fixes"
+    fill = "Fixes",
+    shape = NULL
   )
 ```
 
@@ -157,8 +111,8 @@ ggplot(data_summary_spatial[id %in% c("435", "437")])+
 # save plots
 ggsave(
   fig_heatmap_spatial,
-  filename = "figures/fig_row_3_eda.png",
-  height = 2.5, width = 3
+  filename = "figures/fig_row_3_eda_bats.png",
+  height = 3, width = 2.5
 )
 ```
 
