@@ -185,7 +185,7 @@ ggplot() +
     aes(X, Y,
         col = "raw",
         shape = "raw"),
-    size = 0.1
+    size = 0.075
   ) +
   geom_point(
     data = data_filter[!data_filter_sd_speed, on = "TIME"],
@@ -210,16 +210,16 @@ ggplot() +
         col = "smooth",
         shape = "smooth"
     ),
-    size = 0.5
+    size = 0.3
   ) +
   scale_size_area() +
   scale_colour_manual(
     name = NULL,
     values = c(
       "raw" = "grey", 
-      "outliers" = "darkorange", 
+      "outliers" = "red", 
       "filtered" = "seagreen", 
-      "smooth" = "midnightblue"
+      "smooth" = "grey20"
     ),
     labels = legend_label,
     breaks = names(legend_label)
@@ -265,12 +265,12 @@ ggplot() +
   )+
   
   annotation_scale(
-    bar_cols = c("grey50"),
+    bar_cols = c("grey20"),
     height = unit(1, units = "mm"),
     style = "ticks",
-    line_width = 1.5,
-    line_col = "grey50",
-    text_col = "grey50",
+    line_width = 1,
+    line_col = "grey20",
+    text_col = "grey20",
     width_hint = 0.175
   )
 ```
