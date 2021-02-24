@@ -108,7 +108,7 @@ fwrite(patches_data, file = "data/data_pike_patches.csv")
     max_size = 8
   )+
   scale_colour_discrete_sequential(
-    palette = "Sunset"
+    palette = "Viridis"
   )+
   annotation_scale(
     bar_cols = c("grey20"),
