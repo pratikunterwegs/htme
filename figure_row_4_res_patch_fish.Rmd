@@ -13,8 +13,6 @@ library(sf)
 # plotting
 library(ggplot2)
 library(ggspatial)
-library(magick)
-library(patchwork)
 library(colorspace)
 ```
 
@@ -31,16 +29,19 @@ data[, time := as.numeric(ts)]
 
 ```{r}
 # get lake
-lake = st_read("data/hald_shore/shore.shp")
+lake <- st_read("data/hald_shore/shore.shp")
 ```
 
 exploratory plot
 
 ```{r}
-ggplot(data)+
-  geom_path(aes(x, y,group = tag,
-                col = factor(tag)),
-            lwd = 0.2)
+ggplot(data) +
+  geom_path(aes(x, y,
+    group = tag,
+    col = factor(tag)
+  ),
+  lwd = 0.2
+  )
 ```
 
 the data are very clean
@@ -49,19 +50,19 @@ the data are very clean
 
 ```{r}
 # split
-data = split(data, by = "tag")
+data <- split(data, by = "tag")
 
 # make residence patches and not spatials
-patches = lapply(data, function(df) {
+patches <- lapply(data, function(df) {
   df[, id := tag]
-  
-  patch = atl_res_patch(df)
-  
-  patch = atl_patch_summary(patch, which_data = "summary")
+
+  patch <- atl_res_patch(df)
+
+  patch <- atl_patch_summary(patch, which_data = "summary")
 })
 
-# bidn and save
-patches_data = rbindlist(patches)
+# bind and save
+patches_data <- rbindlist(patches)
 
 fwrite(patches_data, file = "data/data_pike_patches.csv")
 ```
@@ -72,44 +73,47 @@ fwrite(patches_data, file = "data/data_pike_patches.csv")
 
 ```{r}
 # plot
-# fig_scales =
-  ggplot()+
-  geom_sf(data = lake,
-          fill = "blue",
-          col = "grey20")+
-  geom_path(data = patches_data,
-             aes(x_median, y_median,
-                 col = factor(id)),
-            show.legend = F,
-            size = 0.1)+
-  geom_point(data = patches_data,
-             aes(x_median, y_median,
-                 size = duration,
-                 col = factor(id)),
-             show.legend = F,
-             shape = 19,
-             alpha = 0.7)+
-  geom_sf(crs = 32632)+
-             # size = 0.05,
-             # shape = ".",)+
-  theme_test(base_family = "Arial")+
+fig_fish_patch <-
+  ggplot() +
+  geom_sf(
+    data = lake,
+    col = "grey20"
+  ) +
+  geom_path(
+    data = patches_data,
+    aes(x_median, y_median,
+      col = factor(id)
+    ),
+    show.legend = F,
+    size = 0.1
+  ) +
+  geom_point(
+    data = patches_data,
+    aes(x_median, y_median,
+      size = duration,
+      col = factor(id)
+    ),
+    show.legend = F,
+    shape = 19,
+    alpha = 0.7
+  ) +
+  geom_sf(crs = 32632) +
+  # size = 0.05,
+  # shape = ".",)+
+  theme_test(base_family = "Arial") +
   theme(
-    # panel.background = element_rect(
-    #   fill = "khaki",
-    #   colour = NA
-    # ),
     axis.title = element_blank(),
     axis.text.y = element_text(
-      angle= 90,
+      angle = 90,
       hjust = 0.5
     )
-  )+
+  ) +
   scale_size_area(
     max_size = 8
-  )+
+  ) +
   scale_colour_discrete_sequential(
     palette = "Viridis"
-  )+
+  ) +
   annotation_scale(
     bar_cols = c("grey20"),
     height = unit(1, units = "mm"),
@@ -124,35 +128,9 @@ fwrite(patches_data, file = "data/data_pike_patches.csv")
 
 ```{r}
 ggsave(
-  # fig_scales,
+  fig_fish_patch,
   filename = "figures/figure_row_4_pike_patches.png",
   width = 5,
   height = 5
-)
-```
-
-## add red knot
-
-```{r}
-# get figure
-im <- image_read("figures/figure_row_4_f_scales_prelim.png")
-
-# get red knot
-knot <- image_read("figures/knots/knot_poster_picture.png")
-
-# combine knot and figure
-im <-
-  im %>%
-  image_composite(
-    image_scale(knot, "50%x"),
-    operator = "Atop",
-    gravity = "SouthWest",
-    offset = "-50-50"
-  )
-
-# write
-image_write(
-  im,
-  path = "figures/figure_row_4_f_scales.png"
 )
 ```
