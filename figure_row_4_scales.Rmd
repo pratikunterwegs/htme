@@ -31,12 +31,12 @@ data[, time := as.POSIXct(time, tz = "Amsterdam", origin = "1970-01-01")]
 ```{r}
 # get griend manual download
 st_layers("data/map.osm")
-griend = st_read("data/map.osm", layer = "multipolygons")
+griend <- st_read("data/map.osm", layer = "multipolygons")
 # merge into one
-griend = st_union(griend)
+griend <- st_union(griend)
 
 # covnert crs
-griend = st_transform(griend, 32631)
+griend <- st_transform(griend, 32631)
 ```
 
 
@@ -80,7 +80,7 @@ data_filter_sd_speed <- atl_filter_covariates(
 )
 
 # remove NAs
-data_filter_sd_speed = na.omit(data_filter_sd_speed)
+data_filter_sd_speed <- na.omit(data_filter_sd_speed)
 ```
 
 ## do median smooth
@@ -93,7 +93,8 @@ atl_median_smooth(
   x = "X", y = "Y", time = "TIME", moving_window = 5
 )
 
-ggplot(data_smooth)+geom_path(aes(X, Y), size = 0.1)
+ggplot(data_smooth) +
+  geom_path(aes(X, Y), size = 0.1)
 ```
 
 # res patch
@@ -104,8 +105,8 @@ data_smooth[, id := "435"]
 data_smooth[, TIME := NULL]
 
 # make small copy
-data_for_patch = copy(data_smooth)
-data_for_patch = atl_filter_covariates(
+data_for_patch <- copy(data_smooth)
+data_for_patch <- atl_filter_covariates(
   data_for_patch,
   filters = c("time < (time[1] + (72 * 3600))")
 )
@@ -115,18 +116,19 @@ setnames(data_smooth, stringr::str_to_lower(colnames(data_smooth)))
 setnames(data_for_patch, stringr::str_to_lower(colnames(data_for_patch)))
 
 # get patch
-data_patch = atl_res_patch(
+data_patch <- atl_res_patch(
   data = data_for_patch
 )
 
 # get spatials
-data_patch_spatial = atl_patch_summary(data_patch,
-                                       which_data = "spatial")
+data_patch_spatial <- atl_patch_summary(data_patch,
+  which_data = "spatial"
+)
 
 # set crs
 # st_crs(data_patch_spatial) = 32631
 
-bbox = st_bbox(data_patch_spatial)
+bbox <- st_bbox(data_patch_spatial)
 ```
 
 ## make overall figure
@@ -134,34 +136,45 @@ bbox = st_bbox(data_patch_spatial)
 
 ```{r}
 # plot
-fig_scales =
-  ggplot()+
-  geom_sf(data = griend,
-          fill = "khaki3",
-          col = NA)+
-  geom_path(data = data_smooth[time < time[1] + (3600 * 360) ],
-            aes(x, y),
-            size = 0.05,
-            # shape = ".",
-            col = "steelblue")+
-  geom_point(data = data_smooth[time < time[1] + (3600 * 360) ],
-            aes(x, y),
-            size = 0.05,
-            shape = ".",
-            col = "steelblue")+
-  geom_path(data = data_patch[1:10, ],
-             aes(x_median, y_median),
-             show.legend = F,
-            # size = 0.2,
-             colour = "indianred")+
-  geom_point(data = data_patch[1:10, ],
-             aes(x_median, y_median,
-                 size = duration),
-             fill = "indianred",
-             show.legend = F,
-             colour = "grey20",
-             shape = 21)+
-  theme_test(base_family = "Arial")+
+fig_scales <-
+  ggplot() +
+  geom_sf(
+    data = griend,
+    fill = "khaki3",
+    col = NA
+  ) +
+  geom_path(
+    data = data_smooth[time < time[1] + (3600 * 360)],
+    aes(x, y),
+    size = 0.05,
+    # shape = ".",
+    col = "steelblue"
+  ) +
+  geom_point(
+    data = data_smooth[time < time[1] + (3600 * 360)],
+    aes(x, y),
+    size = 0.05,
+    shape = ".",
+    col = "steelblue"
+  ) +
+  geom_path(
+    data = data_patch[1:10, ],
+    aes(x_median, y_median),
+    show.legend = F,
+    # size = 0.2,
+    colour = "indianred"
+  ) +
+  geom_point(
+    data = data_patch[1:10, ],
+    aes(x_median, y_median,
+      size = duration
+    ),
+    fill = "indianred",
+    show.legend = F,
+    colour = "grey20",
+    shape = 21
+  ) +
+  theme_test(base_family = "Arial") +
   theme(
     panel.background = element_rect(
       fill = "aliceblue",
@@ -169,20 +182,22 @@ fig_scales =
     ),
     axis.title = element_blank(),
     axis.text.y = element_text(
-      angle= 90,
+      angle = 90,
       hjust = 0.5
     )
-  )+
+  ) +
   scale_size_area(
     max_size = 8
-  )+
+  ) +
   scale_fill_continuous_sequential(
     palette = "Plasma"
-  )+
-  scale_y_continuous(breaks = c(53.24, 53.25))+
-  scale_x_continuous(breaks = c(5.24, 5.26))+
-  coord_sf(xlim = c(bbox["xmin"] - 200, bbox["xmax"] - 2500),
-           ylim = c(bbox["ymin"] - 200, bbox["ymax"] + 00))+
+  ) +
+  scale_y_continuous(breaks = c(53.24, 53.25)) +
+  scale_x_continuous(breaks = c(5.24, 5.26)) +
+  coord_sf(
+    xlim = c(bbox["xmin"] - 200, bbox["xmax"] - 2500),
+    ylim = c(bbox["ymin"] - 200, bbox["ymax"] + 00)
+  ) +
   annotation_scale(
     bar_cols = c("grey50"),
     height = unit(1, units = "mm"),
@@ -190,7 +205,7 @@ fig_scales =
     line_width = 1.5,
     line_col = "grey50",
     text_col = "grey50",
-    width_hint = 0.175, 
+    width_hint = 0.175,
     location = "br"
   )
 ```
