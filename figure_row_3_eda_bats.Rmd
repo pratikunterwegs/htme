@@ -41,29 +41,39 @@ roosts = fread("data/Roosts.csv")
 
 
 ```{r}
-# fig_heatmap_spatial =
+fig_heatmap_spatial =
 ggplot(data_summary)+
   
   geom_point(
     data = trees,
-    aes(X, Y),
-    size = 0.05,
-    shape = ".",
-    col = "seagreen")+
+    aes(X, Y,
+        col = "trees",
+        shape = "trees"),
+    size = 0.05)+
   geom_tile(aes(xround, yround,
                 fill = N),
             alpha = 0.8)+
   geom_point(
     data = roosts,
     aes(X, Y,
+        col = "Roost",
         shape = "Roost"),
     size = 2,
     stroke = 0.6
   )+
+  scale_colour_manual(
+    values = c(
+      "trees" = "seagreen",
+      "Roost" = "black"
+    ),
+    labels = c("Roost", "Tree")
+  )+
   scale_shape_manual(
     values = c(
-      "Roost" = 5
-    )
+      "Roost" = 5,
+      "trees" = 16
+    ),
+    labels = c("Roost", "Tree")
   )+
   scale_fill_viridis_c(
     option = "C",
@@ -75,7 +85,7 @@ ggplot(data_summary)+
   
   theme_test(base_size = 8)+
   theme(
-    legend.position = c(0.9, 0.8),
+    legend.position = c(0.9, 0.75),
     legend.key.width = unit(2, units = "mm"),
     legend.key.height = unit(3, units = "mm"),
     axis.title = element_blank(),
@@ -84,6 +94,7 @@ ggplot(data_summary)+
       hjust = 0.5
     )
   )+
+  guides(shape = guide_legend(override.aes = list(size = 2, 1)))+
   coord_sf(crs = 2039,
            xlim = range(data$X),
            ylim = range(data$Y),
@@ -103,7 +114,8 @@ ggplot(data_summary)+
   )+
   labs(
     fill = "Fixes",
-    shape = NULL
+    shape = NULL,
+    colour = NULL
   )
 ```
 
