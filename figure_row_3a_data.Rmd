@@ -8,6 +8,7 @@ editor_options:
 # data processing
 library(data.table)
 library(atlastools)
+library(sf)
 
 # plotting
 library(ggplot2)
@@ -69,91 +70,6 @@ data_filter_sd_speed <- atl_filter_covariates(
 )
 ```
 
-## plot data with outliers
-
-```{r}
-# xlim <- c(650600, 650900)
-# ylim <- c(5901800, 5902100)
-#
-# # limits
-# plot_data_filter <-
-#   ggplot() +
-#   geom_path(
-#     data = data_filter,
-#     aes(X, Y),
-#     size = 0.1,
-#     col = "grey"
-#   ) +
-#   geom_point(
-#     data = data_filter[!data_filter_sd_speed, on = "TIME"],
-#     aes(X, Y, col = "outliers"),
-#     shape = 4,
-#     stroke = 0.5
-#   ) +
-#   geom_path(
-#     data = data_filter_sd_speed,
-#     aes(X, Y, col = "filtered"),
-#     size = 0.2
-#   ) +
-#   annotate(
-#     geom = "rect",
-#     xmin = xlim[1], xmax = xlim[2],
-#     ymin = ylim[1], ymax = ylim[2],
-#     fill = NA,
-#     lty = 1,
-#     colour = "grey50"
-#   ) +
-#   scale_colour_manual(
-#     name = NULL,
-#     values = c(
-#       "outliers" = "indianred1",
-#       "filtered" = "seagreen"
-#     ),
-#     labels = c(
-#       "filtered data",
-#       "outliers removed"
-#     )
-#   ) +
-#   scale_shape_manual(
-#     name = NULL,
-#     values = c(
-#       "outliers" = 4,
-#       "filtered" = NA
-#     ),
-#     labels = c("filtered data", "outliers")
-#   ) +
-#   guides(color = guide_legend(
-#     override.aes =
-#       list(
-#         linetype = c(1, 1),
-#         shape = c(NA, 4),
-#       )
-#   )) +
-#   coord_fixed(
-#     xlim = c(NA, max(data_filter$X) + (diff(xlim) * 4))
-#   ) +
-#   theme_void() +
-#   theme(
-#     # plot.title.position = "panel",
-#     plot.title = element_text(
-#       face = "bold",
-#       margin = margin(t = 10, b = -30, r = -20, l = 30),
-#       hjust = 0.05
-#     ),
-#     legend.position = c(0.1, 0.2)
-#   ) +
-#   annotation_scale(
-#     bar_cols = c("grey50"),
-#     height = unit(1, units = "mm"),
-#     style = "ticks",
-#     line_width = 1.5,
-#     line_col = "grey50",
-#     text_col = "grey50",
-#     width_hint = 0.1
-#   ) +
-#   labs(title = "(a)")
-```
-
 ## do median smooth
 
 ```{r}
@@ -169,8 +85,8 @@ atl_median_smooth(
 
 ```{r}
 # set limits
-xlim <- c(650200, 651000)
-ylim <- c(5901800, 5902200)
+xlim <- c(650600, 650950)
+ylim <- c(5901815, 5902000)
 
 legend_label <- c(
   "raw" = "Raw data",
@@ -183,37 +99,22 @@ legend_label <- c(
 figure_3a_prelim <-
   ggplot() +
   geom_path(
-    data = data_filter,
+    data = data_filter[time < time[1] + 12*3600 &
+                         time > time[1] + 4*3600,],
     aes(X, Y,
       col = "raw",
       shape = "raw"
     ),
-    size = 0.075
-  ) +
-  geom_point(
-    data = data_filter[!data_filter_sd_speed, on = "TIME"],
-    aes(X, Y,
-      col = "outliers",
-      shape = "outliers"
-    ),
-    stroke = 0.5,
-    show.legend = T
-  ) +
-  geom_point(
-    data = data_filter_sd_speed,
-    aes(X, Y,
-      col = "filtered",
-      shape = "filtered"
-    ),
-    alpha = 0.5
+    size = 0.3
   ) +
   geom_path(
-    data = data_smooth,
+    data = data_smooth[time < time[1] + 12*3600 &
+                         time > time[1] + 4*3600,],
     aes(X, Y,
       col = "smooth",
       shape = "smooth"
-    ),
-    size = 0.3
+    )
+    # size = 0.3
   ) +
   scale_size_area() +
   scale_colour_manual(
@@ -222,7 +123,7 @@ figure_3a_prelim <-
       "raw" = "grey",
       "outliers" = "red",
       "filtered" = "seagreen",
-      "smooth" = "grey20"
+      "smooth" = "slateblue"
     ),
     labels = legend_label,
     breaks = names(legend_label)
@@ -238,26 +139,22 @@ figure_3a_prelim <-
     labels = legend_label,
     breaks = names(legend_label)
   ) +
-  scale_y_continuous(breaks = c(53.245)) +
+  scale_y_continuous(breaks = 
+                       c(53.245)
+                     ) +
   coord_sf(
     xlim = xlim, ylim = ylim,
     crs = 32631
   ) +
-  guides(color = guide_legend(
-    override.aes =
-      list(linetype = c(1, 0, 0, 1))
-  )) +
   theme_test(base_family = "Arial") +
   theme(
-    legend.position = c(0.85, 0.75),
+    legend.position = c(0.6, 0.8),
     legend.text = element_text(colour = "grey50"),
     legend.background = element_rect(
       fill = "white",
       color = NA
     ),
-    # legend.margin = margin(t = 0, r = 0, b = 0, l = 0),
     panel.background = element_rect(
-      # fill = "aliceblue",
       colour = NA
     ),
     axis.text.y = element_text(
@@ -274,6 +171,50 @@ figure_3a_prelim <-
     line_col = "grey20",
     text_col = "grey20",
     width_hint = 0.175
+  )
+```
+
+## add inset map
+
+```{r}
+# get data
+nl = st_as_sf(rnaturalearthdata::countries50)
+nl = nl[nl$continent == "Europe", ]
+
+# make map
+inset =
+  ggplot(nl)+
+    geom_sf(fill = "khaki", size = 0.2)+
+    geom_point(
+      x = 5, y = 53,
+      shape = 21,
+      size = 3,
+      fill = "indianred1"
+    )+
+    coord_sf(
+      xlim = c(-5, 10.5),
+      ylim = c(43.5, 60)
+    )+
+    theme_void()+
+    theme(
+      plot.background = element_rect(
+        fill = "aliceblue",
+        colour = "black",
+        size = 0.2
+      ),
+      panel.ontop = F
+    )
+```
+
+```{r}
+figure_3a_prelim = 
+  figure_3a_prelim +
+  annotation_custom(
+    ggplotGrob(inset),
+    xmin = xlim[2] - 60,
+    xmax = xlim[2],
+    ymin = ylim[2] - 100,
+    ymax = ylim[2]
   )
 ```
 
