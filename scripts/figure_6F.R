@@ -76,7 +76,7 @@ atl_median_smooth(
 )
 
 #' ## Save as Rdata
-save(data_filter, data_smooth, file = "data/data_figure_6F.Rdata")
+save(data_filter, data_smooth, file = "data/data_fig_6F.Rdata")
 
 #' ## Make figure 6F
 #'
