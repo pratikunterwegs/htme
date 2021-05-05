@@ -3,4 +3,6 @@
 ^\.github$
 ^.* \.Rmd
 ^data/.+$
+^scripts/.+$
+^docs/.+$
 ^LICENSE\.md$
