@@ -1,6 +1,6 @@
 
 # knot data
-data
+data/*
 
 # History files
 .Rhistory
@@ -42,3 +42,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 .Rproj.user
+
+# allow some rdata
+!data/data_fig_*.Rdata
