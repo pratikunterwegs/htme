@@ -2,7 +2,8 @@
 ^\.Rproj\.user$
 ^\.github$
 ^.* \.Rmd
-^data/.+$
-^scripts/.+$
-^docs/.+$
+^data$
+^scripts$
+^docs$
+^figures$
 ^LICENSE\.md$
