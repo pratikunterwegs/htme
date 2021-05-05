@@ -6,21 +6,20 @@
 #'
 #' @return None
 #' @export
-theme_custom <- function(grid = FALSE, ...) {
-  this_theme <- ggplot2::theme_test(...) +
+theme_custom <- function(grid = FALSE, border_size = 2.5, ...) {
+  this_theme <-
+    ggplot2::theme_test(...) +
     ggplot2::theme(
+      panel.border = ggplot2::element_rect(size = border_size),
       legend.position = "none",
       axis.ticks.length = ggplot2::unit(1.5, units = "mm"),
-      axis.text = ggplot2::element_blank(),
-      axis.title = ggplot2::element_blank(),
-      axis.line = ggplot2::element_line(
-        colour = "black",
-        size = 0.2),
+        axis.title = element_blank(),
+        axis.text.y = element_text(
+          angle = 90,
+          hjust = 0.5
+        ),
       strip.background = ggplot2::element_rect(colour = NA,
                                       fill = "lightgrey")
-      # panel.background = ggplot2::element_rect(
-      #   fill = "grey99"
-      # )
     )
 
   if (grid) {
@@ -33,6 +32,6 @@ theme_custom <- function(grid = FALSE, ...) {
       )
   }
 
-  return(this_theme)
+  this_theme
 }
 
