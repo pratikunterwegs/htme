@@ -143,7 +143,7 @@ ggsave(
   fig_6E,
   dpi = 350,
   filename = "figures/fig_6E.png",
-  height = 3, width = 3
+  height = 4, width = 3
 )
 
 #' Show Figure 6E
