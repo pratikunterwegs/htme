@@ -19,6 +19,8 @@ library(sf)
 library(ggplot2)
 library(ggspatial)
 library(magick)
+library(OpenStreetMap)
+library(htme)
 
 #' ## Get data
 # get data
@@ -83,6 +85,21 @@ save(data_filter, data_smooth, file = "data/data_fig_6F.Rdata")
 # set limits
 xlim <- c(650600, 650850)
 ylim <- c(5901815, 5902000)
+
+#' ### Get basemap
+basemap = openmap(
+  upperLeft = c(max(data_summary$Y), min(data_summary$X)),
+  lowerRight = c(min(data_summary$Y), max(data_summary$X)),
+  type = "bing"
+)
+
+# project basemap
+basemap = openproj(basemap, projection = st_crs(4326)$proj4string)
+
+# convert all to transparency
+# set transparency level
+alphalevel = 0.3
+basemap$tiles[[1]]$colorData = alpha(basemap$tiles[[1]]$colorData, alphalevel)
 
 legend_label <- c(
   "raw" = "Raw data",
