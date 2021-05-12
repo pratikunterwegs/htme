@@ -77,8 +77,23 @@ atl_median_smooth(
   x = "X", y = "Y", time = "TIME", moving_window = 11
 )
 
-#' ## Save as Rdata
-save(data_filter, data_smooth, file = "data/data_fig_6F.Rdata")
+#' ## Convert to geographic coordinates
+#'
+# write a custom function here to wrap st_transform
+add_lat_long = function(df) {
+  coords = st_as_sf(df[, c("X", "Y")],
+                    coords = c("X", "Y"),
+                    crs = 32631) %>%
+    st_transform(4326) %>%
+    st_coordinates()
+  colnames(coords) = c("long", "lat")
+  df <- cbind(df, coords)
+  df
+}
+
+# apply function to data
+data_filter = add_lat_long(data_filter)
+data_smooth = add_lat_long(data_smooth)
 
 #' ## Make figure 6F
 #'
@@ -87,9 +102,22 @@ xlim <- c(650600, 650850)
 ylim <- c(5901815, 5902000)
 
 #' ### Get basemap
+#'
+#' First get coordinates from xlim and ylim, in WGS84.
+
+basemap_extent = st_coordinates(
+  st_as_sf(
+    as.data.frame(cbind(xlim, ylim)),
+    coords = c("xlim", "ylim"),
+    crs = 32631
+  ) %>%
+    st_transform(4326)
+) %>%
+  as.data.frame()
+
 basemap = openmap(
-  upperLeft = c(max(data_summary$Y), min(data_summary$X)),
-  lowerRight = c(min(data_summary$Y), max(data_summary$X)),
+  upperLeft = c(max(basemap_extent$Y), min(basemap_extent$X)),
+  lowerRight = c(min(basemap_extent$Y), max(basemap_extent$X)),
   type = "bing"
 )
 
@@ -101,6 +129,10 @@ basemap = openproj(basemap, projection = st_crs(4326)$proj4string)
 alphalevel = 0.3
 basemap$tiles[[1]]$colorData = alpha(basemap$tiles[[1]]$colorData, alphalevel)
 
+#' ## Save as Rdata
+save(data_filter, data_smooth, basemap_extent,
+     basemap, file = "data/data_fig_6F.Rdata")
+
 legend_label <- c(
   "raw" = "Raw data",
   "outliers" = "Unrealistic\nmovement",
@@ -110,11 +142,11 @@ legend_label <- c(
 
 # explore raw
 fig_6F =
-ggplot() +
+autoplot(basemap)+
   geom_path(
     data = data_filter[time < time[1] + 12*3600 &
                          time > time[1] + 4*3600,],
-    aes(X, Y,
+    aes(long, lat,
         col = "raw"
     ),
     size = 0.3
@@ -122,40 +154,34 @@ ggplot() +
   geom_path(
     data = data_smooth[time < time[1] + 12*3600 &
                          time > time[1] + 4*3600,],
-    aes(X, Y,
+    aes(long, lat,
         col = "smooth"
     )
-    # size = 0.3
   ) +
-  scale_size_area() +
   scale_colour_manual(
     name = NULL,
     values = c(
-      "raw" = "grey",
+      "raw" = "grey99",
       "outliers" = "red",
       "filtered" = "seagreen",
-      "smooth" = "slateblue"
-    ),
-    labels = legend_label,
-    breaks = names(legend_label)
-  ) +
-  scale_shape_manual(
-    name = NULL,
-    values = c(
-      "raw" = NA,
-      "outliers" = 4,
-      "filtered" = 1,
-      "smooth" = NA
+      "smooth" = "blue"
     ),
     labels = legend_label,
     breaks = names(legend_label)
   ) +
   scale_y_continuous(
-    breaks = c(53.245)
+    breaks = c(53.244, 53.245),
+    labels = function(x) sprintf("%.3f°N", x)
   ) +
-  coord_sf(
-    xlim = xlim, ylim = ylim,
-    crs = 32631
+  scale_x_continuous(
+    breaks = seq(5.2575, 5.2605, 0.001),
+    labels = function(x) sprintf("%.3f°E", x)
+  ) +
+  ggplot2::coord_sf(
+    crs = 4326,
+    xlim = basemap_extent$X,
+    ylim = basemap_extent$Y,
+    expand = F
   ) +
   annotation_scale(
     bar_cols = c("grey20"),
@@ -170,11 +196,27 @@ ggplot() +
   htme::theme_custom(base_size = 7, base_family = "Arial")+
   theme(
     legend.position = c(0.8, 0.8),
-    legend.background = element_rect(
-      fill = "white",
-      color = NA
+    legend.background = element_blank(),
+    legend.key = element_rect(
+      fill = NA
+    ),
+    legend.text = element_text(
+      size = 10.5
+    ),
+    legend.title = element_text(
+      size = 10.5
+    ),
+    legend.text.align = 0,
+    legend.key.width = unit(5, units = "mm"),
+    legend.key.height = unit(3, units = "mm"),
+    axis.text = element_text(
+      size = 10,
+      face = "bold"
     )
   )
+
+# view figure
+fig_6F
 
 # save image as prelim
 ggsave(
