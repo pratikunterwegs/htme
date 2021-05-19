@@ -93,13 +93,14 @@ add_lat_long = function(df) {
 
 # apply function to data
 data_filter = add_lat_long(data_filter)
+data_filter_sd_speed = add_lat_long(data_filter_sd_speed)
 data_smooth = add_lat_long(data_smooth)
 
 #' ## Make figure 6F
 #'
 # set limits
-xlim <- c(650600, 650850)
-ylim <- c(5901815, 5902000)
+xlim <- c(650620, 650950)
+ylim <- c(5901790, 5902100)
 
 #' ### Get basemap
 #'
@@ -130,53 +131,82 @@ alphalevel = 0.3
 basemap$tiles[[1]]$colorData = alpha(basemap$tiles[[1]]$colorData, alphalevel)
 
 #' ## Save as Rdata
-save(data_filter, data_smooth, basemap_extent,
+save(data_filter, data_filter_sd_speed, data_smooth, basemap_extent,
      basemap, file = "data/data_fig_6F.Rdata")
 
 legend_label <- c(
   "raw" = "Raw data",
-  "outliers" = "Unrealistic\nmovement",
+  "outliers" = "Unrealistic movement",
   "filtered" = "Filtered data",
-  "smooth" = "Median smooth\n(K = 11)"
+  "smooth" = "Median smooth (K = 11)"
 )
 
 # explore raw
 fig_6F =
 autoplot(basemap)+
+# ggplot()+
   geom_path(
-    data = data_filter[time < time[1] + 12*3600 &
-                         time > time[1] + 4*3600,],
-    aes(long, lat,
-        col = "raw"
-    ),
-    size = 0.3
-  ) +
-  geom_path(
-    data = data_smooth[time < time[1] + 12*3600 &
-                         time > time[1] + 4*3600,],
-    aes(long, lat,
-        col = "smooth"
+    data = data_filter[!data_filter_sd_speed, on = c("time")
+                       ][time < time[1] + 7*3600 &
+                         time > time[1] + 5*3600,],
+    aes(
+      long, lat,
+      colour = "outliers",
+      shape = "outliers"
     )
+  )+
+  geom_point(
+    data = data_filter_sd_speed[time < time[1] + 9*3600 &
+                         time > time[1] + 5*3600,],
+    aes(long, lat,
+        col = "filtered",
+        shape = "filtered"
+    ),
+    size = 0.5
+  )+
+  geom_path(
+    data = data_smooth[time < time[1] + 9*3600 &
+                         time > time[1] + 5*3600,],
+    aes(long, lat,
+        col = "smooth",
+        shape = "smooth"
+    )
+  ) +
+  scale_shape_manual(
+    name = NULL,
+    values = c(
+      "outliers" = NA,
+      "filtered" = 4,
+      "smooth" = NA
+    ),
+    labels = legend_label,
+    breaks = names(legend_label)
   ) +
   scale_colour_manual(
     name = NULL,
     values = c(
-      "raw" = "grey99",
-      "outliers" = "red",
-      "filtered" = "seagreen",
-      "smooth" = "blue"
+      "outliers" = "darkorange",
+      "filtered" = "mediumseagreen",
+      "smooth" = "dodgerblue4"
     ),
     labels = legend_label,
     breaks = names(legend_label)
   ) +
   scale_y_continuous(
-    breaks = c(53.244, 53.245),
+    breaks = seq(53.245, 53.250, 0.001),
     labels = function(x) sprintf("%.3f°N", x)
   ) +
   scale_x_continuous(
-    breaks = seq(5.2575, 5.2605, 0.001),
+    breaks = seq(5.258, 5.262, 0.002),
     labels = function(x) sprintf("%.3f°E", x)
   ) +
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        linetype = c(1, 0, 1)
+      )
+    )
+  )+
   ggplot2::coord_sf(
     crs = 4326,
     xlim = basemap_extent$X,
@@ -195,7 +225,7 @@ autoplot(basemap)+
   )+
   htme::theme_custom(base_size = 7, base_family = "Arial")+
   theme(
-    legend.position = c(0.8, 0.8),
+    legend.position = c(0.7, 0.85),
     legend.background = element_blank(),
     legend.key = element_rect(
       fill = NA
@@ -208,7 +238,7 @@ autoplot(basemap)+
     ),
     legend.text.align = 0,
     legend.key.width = unit(5, units = "mm"),
-    legend.key.height = unit(3, units = "mm"),
+    legend.key.height = unit(5, units = "mm"),
     axis.text = element_text(
       size = 10,
       face = "bold"
@@ -221,8 +251,9 @@ fig_6F
 # save image as prelim
 ggsave(
   fig_6F,
+  dpi = 350,
   filename = "figures/fig_6F.png",
-  height = 3, width = 4
+  height = 4, width = 4
 )
 
 #' ## Add red knot
@@ -231,16 +262,17 @@ ggsave(
 im <- image_read("figures/fig_6F.png")
 
 # get red knot
-knot <- image_read("figures/knots/knot_poster_picture.png")
+knot <- image_read("figures/knots/knot_poster_picture.png") %>%
+  image_flop()
 
 # combine knot and figure
 im <-
   im %>%
   image_composite(
-    image_scale(knot, "60%x"),
+    image_scale(knot, "80%x"),
     operator = "Atop",
-    gravity = "SouthWest",
-    offset = "+100+120"
+    gravity = "NorthEast",
+    offset = "+100+350"
   )
 
 # write
