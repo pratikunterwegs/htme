@@ -41,7 +41,7 @@ data_summary = cbind(
   round(
     st_coordinates(
       st_transform(data_summary, crs = 4326)
-  ), 3)
+  ), 2)
 )
 
 # sum again
@@ -60,7 +60,7 @@ basemap = openproj(basemap, projection = st_crs(4326)$proj4string)
 
 # convert all to transparency
 # set transparency level
-alphalevel = 0.3
+alphalevel = 0.45
 basemap$tiles[[1]]$colorData = alpha(basemap$tiles[[1]]$colorData, alphalevel)
 
 #' ## Read trees and roosts
@@ -97,19 +97,19 @@ load("data/data_fig_6E.Rdata")
 fig_6E <-
 autoplot(basemap)+
 # ggplot()+
-  geom_point(
-    data = trees,
-    aes(X, Y,
-        col = "trees",
-        shape = "trees"
-    ),
-    stroke = 0.3
-  )+
+  # geom_point(
+  #   data = trees,
+  #   aes(X, Y,
+  #       col = "trees",
+  #       shape = "trees"
+  #   ),
+  #   stroke = 0.3
+  # )+
   geom_tile(
     data = data_summary,
     aes(X, Y,
         fill = N
-    )
+    ),
   )+
   geom_point(
     data = roosts,
@@ -117,29 +117,31 @@ autoplot(basemap)+
       col = "Roost",
       shape = "Roost"
     ),
-    size = 2
+    size = 3,
+    stroke = 2
   ) +
   scale_colour_manual(
     values = c(
       "trees" = "seagreen",
-      "Roost" = "black"
+      "Roost" = "red"
     ),
     labels = c("Roost", "Tree")
   ) +
   scale_shape_manual(
     values = c(
-      "Roost" = 5,
+      "Roost" = 4,
       "trees" = 2
     ),
     labels = c("Roost", "Tree")
   ) +
   scale_fill_gradientn(
-    colours = pals::jet(25),
+    colours = pals::parula(25),
     # option = "F",
-    breaks = c(10, 100, 1000),
-    labels = c("100", "1,000", "10,000"),
-    trans = "log10"
-    # direction = -1
+    breaks = c(5, 50, 500),
+    labels = c("5", "50", "500"),
+    trans = "log10",
+    limits = c(1, 500),
+    na.value = "gold"
   ) +
   guides(shape = guide_legend(override.aes = list(size = 2, 1))) +
   scale_y_continuous(
